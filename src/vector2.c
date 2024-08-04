@@ -33,17 +33,17 @@ Vector2 Vector2_Normal(Vector2 v)
     return Vector2_New(-v.y, v.x);
 }
 
-void Vector2_Project(Point *points, int length, Vector2 axis, float *min, float *max, int offsetX, int offsetY)
+void Vector2_Project(Point *points, int count, Vector2 axis, float *min, float *max)
 {
     *min = FLT_MAX;
     *max = -FLT_MAX;
 
-    for (int i = 0; i < length; ++i)
+    for (int i = 0; i < count; ++i)
     {
-        Vector2 v = Vector2_New(points[i].x + offsetX, points[i].y + offsetY);
-        float proj = Vector2_Dot(v, axis);
+        Vector2 current = Vector2_New(points[i].x, points[i].y);
+        float proj = Vector2_Dot(current, axis);
 
-        if (proj < *min) { *min = proj; }
-        if (proj > *max) { *max = proj; }
+        if (proj < *min) *min = proj;
+        if (proj > *max) *max = proj;
     }
 }

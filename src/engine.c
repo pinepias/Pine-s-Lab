@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 #include "engine.h"
 #include "shape.h"
+#include "collision.h"
 #include <math.h>
 #include <time.h>
 
@@ -157,22 +158,38 @@ void Engine_Render(Window *window)
     SDL_SetRenderDrawColor(window->renderer, 35, 35, 35, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(window->renderer);
 
-    SDL_SetRenderDrawColor(window->renderer, 255, 0, 0, 255);
 
-    int radius = 50;
 
-    float rotation = 3.14*(SDL_GetTicks()/5)/180;
+    Color color = Color_CreateRGB(255, 255, 255);
+    Rectangle rect0 = Shape_NewRect(window->input.mouse_x, window->input.mouse_y, 100, 100, 0.0);
+    Rectangle rect1 = Shape_NewRect(500, 450, 100, 100, 3.14*(SDL_GetTicks()/10)/180);
+    Rectangle rect2 = Shape_NewRect(800, 400, 100, 100, 0.0);
 
-    Polygon polygon = Shape_NewPolygon(&polygon, 
-        window->input.mouse_x, window->input.mouse_y, rotation, 5,
-        Shape_NewPoint(radius * cosf(0), radius * sinf(0)),
-        Shape_NewPoint(radius * cosf(1), radius * sinf(1)),
-        Shape_NewPoint(radius * cosf(2), radius * sinf(2)), 
-        Shape_NewPoint(radius * cosf(3), radius * sinf(3)), 
-        Shape_NewPoint(radius * cosf(4), radius * sinf(4)));
+    Circle circle0 = Shape_NewCircle(100, 100, 50, 0.0);
+    
 
-    Shape_DebugPolygon(polygon, Color_CreateRGB(255, 0, 0), window);
-    Shape_FreePolygon(&polygon);
+    Shape_DebugRect(rect0, color, window);
+    Shape_DebugRect(rect1, color, window);
+    Shape_DebugRect(rect2, color, window);
+    Shape_DebugCircle(circle0, color, window);  
+
+    if (Collision_DetectPolygon(rect0.points, 4, rect1.points, 4))
+    {
+        Shape_DebugRect(rect0, Color_CreateRGB(255, 0, 0), window);
+        Shape_DebugRect(rect1, Color_CreateRGB(255, 0, 0), window);
+    }
+
+    if (Collision_DetectPolygon(rect0.points, 4, rect2.points, 4))
+    {
+        Shape_DebugRect(rect0, Color_CreateRGB(255, 0, 0), window);
+        Shape_DebugRect(rect2, Color_CreateRGB(255, 0, 0), window);
+    }
+
+    if (Collision_DetectPolygon(rect0.points, 4, circle0.points, CIRCLE_POINTS_COUNT))
+    {
+        Shape_DebugRect(rect0, Color_CreateRGB(255, 0, 0), window);
+        Shape_DebugCircle(circle0, Color_CreateRGB(255, 0, 0), window);
+    }
 
     SDL_RenderPresent(window->renderer);
 }

@@ -16,7 +16,7 @@ Vector2 Vector2_Subtr(Vector2 a, Vector2 b);
 Vector2 Vector2_Mult(Vector2 v, float n);
 Vector2 Vector2_Normal(Vector2 v);
 
-void Vector2_Project(Point *points, int length, Vector2 axis, float *min, float *max, int offsetX, int offsetY);
+void Vector2_Project(Point *points, int count, Vector2 axis, float *min, float *max);
 
 float Vector2_Dot(Vector2 a, Vector2 b);
 

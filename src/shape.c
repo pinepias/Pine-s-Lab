@@ -144,6 +144,33 @@ void Shape_FreePolygon(Polygon *polygon)
     }
 }
 
+Circle Shape_NewCircle(float x, float y, float radius, double rotation)
+{
+    Circle circle;
+
+    float segment = 10.0f;
+    float seg = 1.0f/segment;
+
+    for (float i = 0; i < (2 * PI); i += seg)
+    {
+        Point p = Shape_NewPoint(x + (SDL_cosf(i) * radius), y + (SDL_sinf(i) * radius));
+        circle.points[(int)(i * segment)] = p;
+    }
+
+    return circle;
+}
+
+AABB Shape_NewAABB(float x, float y, float width, float height)
+{
+    AABB aabb = {x - (width/2), y - (height/2), width, height};
+    return aabb;
+}
+
+SimpleCircle Shape_NewSimpleCircle(float x, float y, float radius)
+{
+    SimpleCircle circle = {x, y, radius};
+    return circle;
+}
 
 void Shape_DebugRect(Rectangle rectangle, Color color, Window *window)
 {
@@ -172,5 +199,71 @@ void Shape_DebugPolygon(Polygon polygon, Color color, Window *window)
         Point p2 = polygon.points[(i + 1) % polygon.count];
 
         SDL_RenderDrawLine(window->renderer, p1.x, p1.y, p2.x, p2.y);
+    }
+}
+
+void Shape_DebugCircle(Circle circle, Color color, Window *window)
+{
+    SDL_SetRenderDrawColor(window->renderer, color.r, color.g, color.b, color.a);
+    Point center = Shape_GetPolygonCenter(circle.points, 62);
+
+    for (int i = 0; i < 62; ++i)
+    {
+        SDL_RenderDrawLine(window->renderer, circle.points[i].x, circle.points[i].y, 
+                            circle.points[(i + 1) % 62].x, circle.points[(i + 1) % 62].y);
+    }
+}
+
+void Shape_DebugAABBB(AABB aabb, Color color, Window *window)
+{
+    SDL_Rect rect = {aabb.x, aabb.y, aabb.width, aabb.height};
+    SDL_SetRenderDrawColor(window->renderer, color.r, color.g, color.b, color.a);
+
+    Point topLeft = Shape_NewPoint(aabb.x, aabb.y);
+    Point topRight = Shape_NewPoint(aabb.x + aabb.width, aabb.y);
+    Point bottomRight = Shape_NewPoint(aabb.x + aabb.width, aabb.y + aabb.height);
+    Point bottomLeft = Shape_NewPoint(aabb.x, aabb.y + aabb.height);
+
+    SDL_RenderDrawLine(window->renderer, topLeft.x, topLeft.y, topRight.x, topRight.y);
+    SDL_RenderDrawLine(window->renderer, topRight.x, topRight.y, bottomRight.x, bottomRight.y);
+    SDL_RenderDrawLine(window->renderer, bottomRight.x, bottomRight.y, bottomLeft.x, bottomLeft.y);
+    SDL_RenderDrawLine(window->renderer, bottomLeft.x, bottomLeft.y, topLeft.x, topLeft.y);
+}
+
+void Shape_DebugSimpleCircle(SimpleCircle circle, Color color, Window *window)
+{
+    SDL_SetRenderDrawColor(window->renderer, color.r, color.g, color.b, color.a);
+    const int diameter = (circle.radius * 2);
+
+    int x = (circle.radius - 1);
+    int y = 0;
+    int tx = 1;
+    int ty = 1;
+    int error = (tx - diameter);
+
+    while (x >= y)
+    {
+        SDL_RenderDrawPoint(window->renderer, circle.x + x, circle.y - y);
+        SDL_RenderDrawPoint(window->renderer, circle.x + x, circle.y + y);
+        SDL_RenderDrawPoint(window->renderer, circle.x - x, circle.y - y);
+        SDL_RenderDrawPoint(window->renderer, circle.x - x, circle.y + y);
+        SDL_RenderDrawPoint(window->renderer, circle.x + y, circle.y - x);
+        SDL_RenderDrawPoint(window->renderer, circle.x + y, circle.y + x);
+        SDL_RenderDrawPoint(window->renderer, circle.x - y, circle.y - x);
+        SDL_RenderDrawPoint(window->renderer, circle.x - y, circle.y + x);
+
+        if (error <= 0)
+        {
+            ++y;
+            error += ty;
+            ty += 2;
+        }
+
+        if (error > 0)
+        {
+            --x;
+            tx += 2;
+            error += (tx - diameter);
+        }
     }
 }
