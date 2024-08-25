@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "types.h": "c",
+        "stdint.h": "c",
+        "sdl_stdinc.h": "c",
+        "compare": "c",
+        "type_traits": "c"
+    }
+}
