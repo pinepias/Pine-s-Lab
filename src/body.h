@@ -4,28 +4,27 @@
 #include "types.h"
 #include <stdbool.h>
 
-typedef struct Color                    Color;
 typedef struct Window                   Window;
+typedef struct Color                    Color;
 
 typedef struct Body                     Body;
 typedef enum   ShapeType                ShapeType;
 
-bool Body_CreateBox(Body *body, Vector2 position, float width, float height, float density, 
-                    float restitution, float rotation, bool isStatic);
+#define PI 3.14159265358979323846264338327950288
 
-bool Body_CreateCircle(Body *body, Vector2 center, float radius, float density, 
-                    float restitution, float rotation, bool isStatic);
+bool Body_NewBox(Body *body, Vector2 position, float width, float height, float density, 
+                float rotation, float resistituion, bool isStatic);
 
-bool Body_Destroy(Body *body);
+bool Body_NewCircle(Body *body, Vector2 center, float radius, float density, 
+                float rotation, float resistituion, bool isStatic);
 
-void Body_Move(Body *body, Vector2 velocity);
-void Body_Rotate(Body *body, float angle);
 void Body_AddForce(Body *body, Vector2 amount);
-
+void Body_Debug(Body *body, Window *window, Color color);
 void Body_Step(Body *body, float time);
-void Body_Debug(Body *body, Color color, Window *window);
+void Body_Move(Body *body, Vector2 amount);
+void Body_UpdateBox(Body *box);
 
-enum ShapeType
+enum ShapeType 
 {
     Box,
     Circle,
@@ -34,28 +33,28 @@ enum ShapeType
 
 struct Body
 {
+    Vector2 force;
     Vector2 position;
-    Vector2 linerVelocity;
+    Vector2 linearVelocity;
+
+    float resistituion;
+    float density;
+    float mass;
+
+    float width;
+    float height;
+    float radius;
+
     float rotation;
     float rotationVelocity;
 
-    Vector2 force;
-
-    float density;
-    float mass;
-    float restitution;
-    float area;
-
-    bool isStatic;
-
-    float radius;
-    float width;
-    float height;
-
     Vector2 *vertices;
     Vector2 *transformedVertices;
+    int vertLength;
 
-    ShapeType shapeType;
+    ShapeType shape;
+    bool isStatic;
 };
+
 
 #endif

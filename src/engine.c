@@ -5,24 +5,16 @@
 
 #include "engine.h"
 #include "body.h"
-#include "types.h"
 #include "collision.h"
-#include "world.h"
 
-Color colors[BODY_COUNT];
-World *world;
 float elapsedTime = 0.0f;
 float lastTime = 0.0f;
+
+Body box0, box1, circle0, circle1;
 
 void Engine_Init(const char *title, int width, int height, Window *window)
 {
     srand(time(NULL));
-
-    Body box;
-    Body_CreateBox(&box, Vector2_Zero(), 5.0f, 5.0f, 2.0f, 0.5f, 0.0f, false);
-
-    world = CREATE_DEFAULT_WORLD;
-    
 
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
     {
@@ -63,30 +55,16 @@ void Engine_Init(const char *title, int width, int height, Window *window)
     SDL_memset(window->input.mousePressed, 0, 3);
     SDL_memset(window->input.mouseRealese, 0, 3);
 
-    for (int i = 0; i < BODY_COUNT; ++i)
-    {
-        float posX = clamp((rand() % 1024), 100, 1024 - 100);
-        float posY = clamp((rand() % 576), 100, 576 - 100);
+    Vector2 pos0 = {100.0f, 200.0f};
+    Vector2 pos1 = {100.0f, 100.0f};
+    Vector2 pos2 = {400.0f, 200.0f};
+    Vector2 pos3 = {400.0f, 100.0f};
 
-        ShapeType shape = ((rand() % 2) == 0) ? Box : Circle;
-        colors[i] = Color_CreateRGB(rand() % 255, rand() % 255, rand() % 255);
+    Body_NewBox(&box0, pos0, 5.0f, 5.0f, 50.0f, 0.0f, 0.5f, false);
+    Body_NewBox(&box1, pos2, 5.0f, 5.0f, 50.0f, 0.0f, 0.5f, false);
 
-        Body body;
-
-        switch (shape)
-        {
-            case Box: 
-                Body_CreateBox(&body, Vector2_New(posX, posY), 5.0f, 5.0f, 2.0f, 0.5f, 0.0f, false); 
-                World_AddBox(world, body, body.vertices, body.transformedVertices);
-            break;
-
-            case Circle: 
-                Body_CreateCircle(&body, Vector2_New(posX, posY), 5.0f, 2.0f, 0.0f, 0.5f, false); 
-                World_AddCircle(world, body);
-            break;
-        }
-        
-    }
+    Body_NewCircle(&circle0, pos1, 5.0f, 50.0f, 0.0f, 0.5f, false);
+    Body_NewCircle(&circle1, pos3, 5.0f, 50.0f, 0.0f, 0.5f, false);
 }
 
 void Engine_Update(Window *window)
@@ -95,7 +73,31 @@ void Engine_Update(Window *window)
     elapsedTime = (currentTime - lastTime) / 1000.0f;
     lastTime = currentTime;
 
-    World_Step(world, window, elapsedTime);
+    float dx = Input_KeyPress(&window->input, SDL_SCANCODE_D) - 
+                Input_KeyPress(&window->input, SDL_SCANCODE_A);
+
+    float dy = Input_KeyPress(&window->input, SDL_SCANCODE_S) - 
+                Input_KeyPress(&window->input, SDL_SCANCODE_W);
+    
+    Vector2 velocity = {dx, dy};
+
+    Vector2_Normalizedl(&velocity);
+    Vector2_Multl(&velocity, 5000.0f);
+
+    Body_AddForce(&circle0, velocity);
+    Body_Step(&circle0, elapsedTime);
+
+    Vector2 normal;
+    float depth;
+
+    if (IntersectPolygonCircle(box0.transformedVertices, box0.vertLength, circle0.position, circle0.radius, &normal, &depth))
+    {
+        Vector2 move;
+        Vector2_Mult(&move, normal, depth / -2.0f);
+        Body_Move(&circle0, move);
+        Vector2_Mult(&move, normal, depth / 2.0f);
+        Body_Move(&box0, move);
+    }
 }
 
 void Input_Begin(Input *input)
@@ -203,17 +205,16 @@ void Engine_Render(Window *window)
     SDL_SetRenderDrawColor(window->renderer, 35, 35, 35, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(window->renderer);
 
-    for (int i = 0; i < BODY_COUNT; ++i)
-    {
-        Body_Debug(&world->bodyList[i], colors[i], window);
-    }
+    Body_Debug(&box0, window, Color_CreateRGB(255, 0, 0));
+    Body_Debug(&circle0, window, Color_CreateRGB(0, 255, 0));
+    Body_Debug(&box1, window, Color_CreateRGB(0, 0, 255));
+    Body_Debug(&circle1, window, Color_CreateRGB(255, 255, 0));
 
     SDL_RenderPresent(window->renderer);
 }
 
 void Engine_CleanUp(Window *window)
 {
-    World_Clear(world);
     SDL_DestroyRenderer(window->renderer);
     SDL_DestroyWindow(window->window);
     SDL_Quit();

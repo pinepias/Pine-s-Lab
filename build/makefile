@@ -12,5 +12,5 @@ EXEC_GAME = engine.out
 all: engine
 
 engine: $(SRC)
-	$(CC) $(CFLAGS) $(SRC) $(LDFLAGS) -o $(EXEC_GAME)
+	$(CC) $(CFLAGS) $(SRC) $(LDFLAGS) -lm -o $(EXEC_GAME)
 	./$(EXEC_GAME)

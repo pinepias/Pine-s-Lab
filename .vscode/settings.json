@@ -4,6 +4,9 @@
         "stdint.h": "c",
         "sdl_stdinc.h": "c",
         "compare": "c",
-        "type_traits": "c"
+        "type_traits": "c",
+        "body.h": "c",
+        "engine.h": "c",
+        "stdbool.h": "c"
     }
 }

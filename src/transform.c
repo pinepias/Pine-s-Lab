@@ -1,16 +1,18 @@
+#include <math.h>
 #include "types.h"
-#include "transform.h"
 
-#include <SDL2/SDL.h>
-
-Transform Transform_New(Vector2 pos, float angle)
+void Transform_Set(Transform *transform, float x, float y, float angle)
 {
-    Transform __transform__;
-    __transform__.x = pos.x;
-    __transform__.y = pos.y;
+    (*transform)[0][0] = x;
+    (*transform)[0][1] = y;
+    (*transform)[1][0] = cosf(angle);
+    (*transform)[1][1] = sinf(angle);
+}
 
-    __transform__.cos = SDL_cosf(angle);
-    __transform__.sin = SDL_sinf(angle);
-
-    return __transform__;
+void Transform_Setv(Transform *transform, Vector2 v, float angle)
+{
+    (*transform)[0][0] = v[0];
+    (*transform)[0][1] = v[1];
+    (*transform)[1][0] = cosf(angle);
+    (*transform)[1][1] = sinf(angle);
 }
