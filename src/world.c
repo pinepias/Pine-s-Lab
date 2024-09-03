@@ -107,7 +107,7 @@ void World_Step(World *world, Window *window, float time)
     {
         for (int j = 0; j < world->length; ++j)
         {
-            if (i == j)
+            if ((i == j) || (world->bodies[i].isStatic && world->bodies[j].isStatic))
             {
                 continue;
             }
@@ -119,11 +119,24 @@ void World_Step(World *world, Window *window, float time)
             {
                 Vector2 resolve;
 
-                Vector2_Mult(&resolve, normal, depth);
-                Body_Move(&world->bodies[i], resolve);
+                if (world->bodies[i].isStatic)
+                {
+                    Vector2_Mult(&resolve, normal, -depth);
+                    Body_Move(&world->bodies[j], resolve);
+                }
+                else if (world->bodies[j].isStatic)
+                {
+                    Vector2_Mult(&resolve, normal, depth);
+                    Body_Move(&world->bodies[i], resolve);
+                }
+                else
+                {
+                    Vector2_Mult(&resolve, normal, depth);
+                    Body_Move(&world->bodies[i], resolve);
 
-                Vector2_Multl(&resolve, -1.0f);
-                Body_Move(&world->bodies[j], resolve);
+                    Vector2_Multl(&resolve, -1.0f);
+                    Body_Move(&world->bodies[j], resolve);
+                }
 
                 World_ResolveCollision(&world->bodies[i], &world->bodies[j], normal);
             }
@@ -164,13 +177,20 @@ void World_ResolveCollision(Body *b0, Body *b1, Vector2 normal)
     Vector2 relativeVelocity;
     Vector2_Sub(&relativeVelocity, b1->linearVelocity, b0->linearVelocity);
 
+    if (Vector2_Dot(relativeVelocity, normal) < 0.0f)
+    {
+        return;
+    }
+
     float e = SDL_min(b0->resistituion, b1->resistituion);
-    float j = ((-(1 + e) * Vector2_Dot(relativeVelocity, normal)) / (1.0f/b0->mass + 1.0/b1->mass));
+    float j = ((-(1 + e) * Vector2_Dot(relativeVelocity, normal)) / (b0->invMass + b1->invMass));
 
-    Vector2 velocity;
-    Vector2_Mult(&velocity, normal, j/b0->mass);
-    Vector2_Subl(&b0->linearVelocity, velocity);
+    Vector2 impulse;
+    Vector2_Mult(&impulse, normal, j);
+    Vector2_Multl(&impulse, b0->invMass);
+    Vector2_Subl(&b0->linearVelocity, impulse);
 
-    Vector2_Mult(&velocity, normal, j/b1->mass);
-    Vector2_Addl(&b1->linearVelocity, velocity);
+    Vector2_Mult(&impulse, normal, j);
+    Vector2_Multl(&impulse, b1->invMass);
+    Vector2_Addl(&b1->linearVelocity, impulse);
 }

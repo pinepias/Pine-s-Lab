@@ -67,11 +67,14 @@ void Engine_Init(const char *title, int width, int height, Window *window)
         ShapeType shape = (rand() % 2 == 0) ? Box : Circle;
         colors[i] = Color_CreateRGB(rand() % 255, rand() % 255, rand() % 255);
 
+        bool s = (i > 0) ? (rand() % 2 == 0) : false; 
+        if (s) colors[i] = Color_CreateRGB(122, 96, 63);
+
         if (shape == Box)
         {
             Body box;
             Vector2 position = {posX, posY};
-            Body_NewBox(&box, position, 5.0f, 5.0f, 50.0f, 0.0f, 0.5f, false);
+            Body_NewBox(&box, position, 5.0f, 5.0f, 50.0f, 0.0f, 0.5f, s);
             World_AddBody(world, &box);
             Body_Destroy(&box);
         }
@@ -79,7 +82,7 @@ void Engine_Init(const char *title, int width, int height, Window *window)
         {
             Body circle;
             Vector2 position = {posX, posY};
-            Body_NewCircle(&circle, position, 5.0f, 50.0f, 0.0f, 0.5f, false);
+            Body_NewCircle(&circle, position, 5.0f, 50.0f, 0.0f, 0.5f, s);
             World_AddBody(world, &circle);
         }
     }

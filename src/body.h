@@ -42,6 +42,7 @@ struct Body
     float resistituion;
     float density;
     float mass;
+    float invMass;
 
     float width;
     float height;

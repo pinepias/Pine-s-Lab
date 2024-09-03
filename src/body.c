@@ -17,6 +17,8 @@ bool Body_NewBox(Body *body, Vector2 position, float width, float height, float 
     float volume = (width * height * 1.0f);
 
     body->mass = mass;
+    body->invMass = (!isStatic) ? (1.0f/mass) : 0.0f;
+
     body->density = mass/volume;
 
     body->rotation = rotation;
@@ -56,6 +58,7 @@ bool Body_NewCircle(Body *body, Vector2 center, float radius, float mass,
     body->radius = (radius * 6.0f);
 
     body->mass = mass;
+    body->invMass = (!isStatic) ? (1.0f/mass) : 0.0f;
     body->density = mass/volume;
 
     body->rotation = rotation;
