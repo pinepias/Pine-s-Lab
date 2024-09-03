@@ -6,11 +6,13 @@
 #include "engine.h"
 #include "body.h"
 #include "collision.h"
+#include "world.h"
 
 float elapsedTime = 0.0f;
 float lastTime = 0.0f;
 
-Body box0, box1, circle0, circle1;
+World *world;
+Color colors[BODY_COUNT];
 
 void Engine_Init(const char *title, int width, int height, Window *window)
 {
@@ -39,7 +41,7 @@ void Engine_Init(const char *title, int width, int height, Window *window)
     window->renderer = SDL_CreateRenderer(
                                         window->window, 
                                         -1, 
-                                        SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+                                        SDL_RENDERER_ACCELERATED);
 
     if (window->renderer == NULL)
     {
@@ -55,49 +57,66 @@ void Engine_Init(const char *title, int width, int height, Window *window)
     SDL_memset(window->input.mousePressed, 0, 3);
     SDL_memset(window->input.mouseRealese, 0, 3);
 
-    Vector2 pos0 = {100.0f, 200.0f};
-    Vector2 pos1 = {100.0f, 100.0f};
-    Vector2 pos2 = {400.0f, 200.0f};
-    Vector2 pos3 = {400.0f, 100.0f};
+    World_CreateDefault(&world);
 
-    Body_NewBox(&box0, pos0, 5.0f, 5.0f, 50.0f, 0.0f, 0.5f, false);
-    Body_NewBox(&box1, pos2, 5.0f, 5.0f, 50.0f, 0.0f, 0.5f, false);
+    for (int i = 0; i <= BODY_COUNT; ++i)
+    {
+        float posX = (rand() % 999) + 25;
+        float posY = (rand() % 551) + 25;
 
-    Body_NewCircle(&circle0, pos1, 5.0f, 50.0f, 0.0f, 0.5f, false);
-    Body_NewCircle(&circle1, pos3, 5.0f, 50.0f, 0.0f, 0.5f, false);
+        ShapeType shape = (rand() % 2 == 0) ? Box : Circle;
+        colors[i] = Color_CreateRGB(rand() % 255, rand() % 255, rand() % 255);
+
+        if (shape == Box)
+        {
+            Body box;
+            Vector2 position = {posX, posY};
+            Body_NewBox(&box, position, 5.0f, 5.0f, 50.0f, 0.0f, 0.5f, false);
+            World_AddBody(world, &box);
+            Body_Destroy(&box);
+        }
+        else
+        {
+            Body circle;
+            Vector2 position = {posX, posY};
+            Body_NewCircle(&circle, position, 5.0f, 50.0f, 0.0f, 0.5f, false);
+            World_AddBody(world, &circle);
+        }
+    }
+
+    window->frequency = SDL_GetPerformanceFrequency();
+    window->lastTime = SDL_GetPerformanceCounter();
 }
 
 void Engine_Update(Window *window)
 {   
-    Uint32 currentTime = SDL_GetTicks();
-    elapsedTime = (currentTime - lastTime) / 1000.0f;
-    lastTime = currentTime;
+    Uint64 currentTime = SDL_GetPerformanceCounter();
+    Uint64 elapsedTicks = currentTime - window->lastTime;
+    float elapsedTime = (float)elapsedTicks / window->frequency;
 
-    float dx = Input_KeyPress(&window->input, SDL_SCANCODE_D) - 
-                Input_KeyPress(&window->input, SDL_SCANCODE_A);
+    window->lastTime = currentTime;
+    World_Step(world, window, elapsedTime);
 
-    float dy = Input_KeyPress(&window->input, SDL_SCANCODE_S) - 
-                Input_KeyPress(&window->input, SDL_SCANCODE_W);
-    
-    Vector2 velocity = {dx, dy};
+    Uint64 start = SDL_GetPerformanceCounter();
+    SDL_Delay(1);
+    Uint64 end = SDL_GetPerformanceCounter();
 
-    Vector2_Normalizedl(&velocity);
-    Vector2_Multl(&velocity, 5000.0f);
-
-    Body_AddForce(&circle0, velocity);
-    Body_Step(&circle0, elapsedTime);
-
-    Vector2 normal;
-    float depth;
-
-    if (IntersectPolygonCircle(box0.transformedVertices, box0.vertLength, circle0.position, circle0.radius, &normal, &depth))
+    if (end > start) 
     {
-        Vector2 move;
-        Vector2_Mult(&move, normal, depth / -2.0f);
-        Body_Move(&circle0, move);
-        Vector2_Mult(&move, normal, depth / 2.0f);
-        Body_Move(&box0, move);
+        window->totalTicks += (end - start);
+        window->trialCount++;
     }
+
+    if (window->trialCount >= 100) 
+    {
+        double avgTicks = (double)window->totalTicks / 100;
+        window->avgMillis = (avgTicks * 1000) / window->frequency;
+            
+        window->totalTicks = 0;
+        window->trialCount = 0;
+    }
+
+    SDL_Delay(window->avgMillis);
 }
 
 void Input_Begin(Input *input)
@@ -205,16 +224,17 @@ void Engine_Render(Window *window)
     SDL_SetRenderDrawColor(window->renderer, 35, 35, 35, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(window->renderer);
 
-    Body_Debug(&box0, window, Color_CreateRGB(255, 0, 0));
-    Body_Debug(&circle0, window, Color_CreateRGB(0, 255, 0));
-    Body_Debug(&box1, window, Color_CreateRGB(0, 0, 255));
-    Body_Debug(&circle1, window, Color_CreateRGB(255, 255, 0));
+    for (int i = 0; i < world->length; ++i)
+    {
+        Body_Debug(&world->bodies[i], window, colors[i]);
+    }
 
     SDL_RenderPresent(window->renderer);
 }
 
 void Engine_CleanUp(Window *window)
 {
+    World_Destroy(&world);
     SDL_DestroyRenderer(window->renderer);
     SDL_DestroyWindow(window->window);
     SDL_Quit();

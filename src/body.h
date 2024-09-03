@@ -12,7 +12,7 @@ typedef enum   ShapeType                ShapeType;
 
 #define PI 3.14159265358979323846264338327950288
 
-bool Body_NewBox(Body *body, Vector2 position, float width, float height, float density, 
+bool Body_NewBox(Body *body, Vector2 position, float width, float height, float mass, 
                 float rotation, float resistituion, bool isStatic);
 
 bool Body_NewCircle(Body *body, Vector2 center, float radius, float density, 
@@ -23,6 +23,8 @@ void Body_Debug(Body *body, Window *window, Color color);
 void Body_Step(Body *body, float time);
 void Body_Move(Body *body, Vector2 amount);
 void Body_UpdateBox(Body *box);
+
+void Body_Destroy(Body *body);
 
 enum ShapeType 
 {

@@ -223,3 +223,16 @@ void Body_Move(Body *body, Vector2 amount)
     Vector2_Addl(&body->position, amount);
     Body_UpdateBox(body);
 }
+
+void Body_Destroy(Body *body)
+{
+    if (body->vertices != NULL)
+    {
+        free(body->vertices);
+    }
+
+    if (body->transformedVertices != NULL)
+    {
+        free(body->transformedVertices);
+    }
+}

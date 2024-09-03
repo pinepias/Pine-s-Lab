@@ -144,7 +144,7 @@ bool IntersectCircle(Vector2 *centerA, int radiusA, Vector2 *centerB, int radius
     return true;
 }
 
-bool IntersectPolygonCircle(Vector2 *vertices, int length, Vector2 *center, int radius, 
+bool IntersectPolygonCircle(Vector2 *vertices, int length, Vector2 *center, float radius, 
                     Vector2 *normal, float *depth)
 {
     float axisDepth = FLT_MAX;
@@ -172,7 +172,7 @@ bool IntersectPolygonCircle(Vector2 *vertices, int length, Vector2 *center, int 
         Vector2_Projection(vertices, length, axis, &min, &max);
         Vector2_ProjectionCircle(center, radius, axis, &cmin, &cmax);
 
-        if (min > cmax || cmin > max)
+        if (min >= cmax || cmin >= max)
         {
             return false;
         }

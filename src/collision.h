@@ -10,7 +10,7 @@ bool IntersectPolygon(Vector2 *verticesA, int lengthA, Vector2 *verticesB, int l
 bool IntersectCircle(Vector2 *centerA, int radiusA, Vector2 *centerB, int radiusB, 
                     Vector2 *normal, float *depth);
 
-bool IntersectPolygonCircle(Vector2 *vertices, int length, Vector2 *center, int radius, 
+bool IntersectPolygonCircle(Vector2 *vertices, int length, Vector2 *center, float radius, 
                     Vector2 *normal, float *depth);
 
 int FindClosestPointPolygon(Vector2 center, Vector2 *vertices, int length);

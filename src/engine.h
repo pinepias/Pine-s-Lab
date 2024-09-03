@@ -62,6 +62,13 @@ struct Window
     SDL_Renderer *renderer;
     Input input;
     bool running;
+
+    Uint64 frequency;
+    Uint64 lastTime;
+    Uint64 totalTicks;
+    int trialCount;
+
+    Uint32 avgMillis;
 };
 
 #endif
