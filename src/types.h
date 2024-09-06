@@ -8,6 +8,7 @@ typedef uint16_t Uint16;
 typedef uint8_t Uint8;
 
 typedef float Vector2[2];
+typedef Vector2 AABB[2]; //min e max
 typedef Vector2 Transform[2];
 
 void Vector2_Set(Vector2 *dest, float x, float y);
@@ -43,6 +44,9 @@ float Vector2_Length(Vector2 dest);
 float Vector2_LengthSquared(Vector2 dest);
 
 float Vector2_Dot(Vector2 a, Vector2 b);
+
+void AABB_Set(AABB *aabb, float minX, float minY, float maxX, float maxY);
+void AABB_Setv(AABB *aabb, Vector2 min, Vector2 max);
 
 void Transform_Set(Transform *transform, float x, float y, float angle);
 void Transform_Setv(Transform *transform, Vector2 v, float angle);

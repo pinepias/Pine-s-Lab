@@ -12,7 +12,7 @@ typedef struct Color                Color;
 typedef struct Input                Input;
 typedef struct Clock                Clock;
 
-#define BODY_COUNT 10
+typedef struct ColorList            ColorList;
 
 void Engine_Init(const char *title, int width, int height, Window *window);
 void Engine_Events(Window *window);
@@ -38,9 +38,14 @@ bool Input_MouseRealese(Input *input, int code);
 
 Color Color_CreateRGB(int r, int g, int b);
 
+void ColorList_Create(ColorList *list);
+void ColorList_Push(ColorList *list, Color color);
+void ColorList_Remove(ColorList *list, int index);
+void ColorList_Destroy(ColorList *list);
+
 struct Color
 {
-    int r, g, b, a;
+    Uint8 r, g, b, a;
 };
 
 struct Input
@@ -69,6 +74,12 @@ struct Window
     int trialCount;
 
     Uint32 avgMillis;
+};
+
+struct ColorList
+{
+    Color *colors;
+    int length;
 };
 
 #endif

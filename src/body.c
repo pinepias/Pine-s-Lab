@@ -4,6 +4,7 @@
 #include <math.h>
 #include "body.h"
 #include "engine.h"
+#include "world.h"
 
 bool Body_NewBox(Body *body, Vector2 position, float width, float height, float mass,
                  float rotation, float resistituion, bool isStatic)
@@ -151,14 +152,21 @@ void Body_Debug(Body *body, Window *window, Color color)
     SDL_SetRenderDrawColor(window->renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
 }
 
-void Body_Step(Body *body, float time)
+void Body_Step(Body *body, World *world, int interations, float time)
 {
+    if (body->isStatic)
+    {
+        return;
+    }
+
+    time = time / (float)interations;
+
     /*
         f = m * a
         > a = f/m
     */
-    Vector2 accelaration;
-    Vector2_Div(&accelaration, body->force, body->mass);
+    //Vector2 accelaration;
+    //Vector2_Div(&accelaration, body->force, body->mass);
 
     /*
         a = (vf - vi)/t
@@ -168,8 +176,15 @@ void Body_Step(Body *body, float time)
         > vf = vi + a*t
     */
 
-    Vector2_Multl(&accelaration, time);
-    Vector2_Addl(body->linearVelocity, accelaration);
+    //Vector2_Multl(&accelaration, time);
+    //Vector2_Addl(body->linearVelocity, accelaration);
+
+    Vector2 gravity;
+    Vector2_Setv(&gravity, world->gravity);
+    Vector2_Multl(&gravity, time);
+    Vector2_Addl(body->linearVelocity, gravity);
+
+    
 
     /*
         v = s/t;
@@ -237,5 +252,119 @@ void Body_Destroy(Body *body)
     if (body->transformedVertices != NULL)
     {
         free(body->transformedVertices);
+    }
+}
+
+void Body_GetAABB(Body *body)
+{
+    float minX = FLT_MAX;
+    float minY = FLT_MAX;
+    float maxX = FLT_MIN;
+    float maxY = FLT_MIN;
+
+    if (body->shape == Box)
+    {
+        for (int i = 0; i < body->vertLength; ++i)
+        {
+            Vector2 point;
+            Vector2_Setv(&point, body->transformedVertices[i]);
+
+            if (point[0] < minX) minX = point[0];
+            if (point[0] > maxX) maxX = point[0];
+
+            if (point[1] < minY) minY = point[1];
+            if (point[1] > maxY) maxY = point[1];
+        }
+    }
+    else
+    {
+        minX = body->position[0] - body->radius;
+        minY = body->position[1] - body->radius;
+
+        maxX = body->position[0] + body->radius;
+        maxY = body->position[1] + body->radius;
+    }
+    
+    body->aabb[0][0] = minX;
+    body->aabb[0][1] = minX;
+    body->aabb[1][0] = maxX;
+    body->aabb[1][1] = maxY;
+}
+
+void BodyList_Create(BodyList *list)
+{
+    list->bodies = NULL;
+    list->length = 0;
+}
+
+void BodyList_Push(BodyList *list, Body *body)
+{
+    int len = list->length + 1;
+    list->bodies = realloc(list->bodies, len * sizeof(Body));
+
+    if (list->bodies == NULL)
+    {
+        printf("Error when creating the bodies list.\n");
+        return;
+    }
+    
+    Body result = (*body);
+    result.vertices = NULL;
+    result.transformedVertices = NULL;
+    result.vertLength = 0;
+
+    if (body->shape == Box)
+    {
+        result.vertLength = 4;
+        result.vertices = (Vector2 *)calloc(result.vertLength, sizeof(Vector2));
+        result.transformedVertices = (Vector2 *)calloc(result.vertLength, sizeof(Vector2));
+
+        if (result.vertices == NULL || result.transformedVertices == NULL)
+        {
+            printf("Error in allocating memory for vertices.\n");
+            return;
+        }
+
+        memcpy(result.vertices, body->vertices, result.vertLength * sizeof(Vector2));
+        memcpy(result.transformedVertices, body->transformedVertices, result.vertLength * sizeof(Vector2));
+    }   
+
+    list->bodies[len - 1] = result;
+    list->length = len;
+}
+
+void BodyList_Remove(BodyList *list, int index)
+{
+    for (int i = index; i < list->length - 1; ++i)
+    {
+        list->bodies[i] = list->bodies[i + 1];
+    }   
+
+    int len = list->length - 1;
+    Body *temp = (Body *)realloc(list->bodies, len * sizeof(Body));
+
+    if (temp == NULL)
+    {
+        printf("Error when reallocating the bodies.\n");
+        return;
+    }
+
+    list->bodies = temp;
+    list->length = len; 
+}
+
+
+void BodyList_Destroy(BodyList *list)
+{
+    if (list->bodies != NULL)
+    {
+        for (int i = 0; i < list->length; ++i)
+        {
+            Body_Destroy(&list->bodies[i]);
+        }
+
+        list->length = 0;
+        free(list->bodies);
+        list->bodies = NULL;
     }
 }

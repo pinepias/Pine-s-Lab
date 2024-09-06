@@ -12,7 +12,56 @@ float elapsedTime = 0.0f;
 float lastTime = 0.0f;
 
 World *world;
-Color colors[BODY_COUNT];
+ColorList colorList;
+
+void ColorList_Create(ColorList *list)
+{
+    list->colors = NULL;
+    list->length = 0;
+}
+
+void ColorList_Push(ColorList *list, Color color)
+{
+    int len = list->length + 1;
+    list->colors = (Color *)realloc(list->colors, len * sizeof(Color));
+
+    if (list->colors == NULL)
+    {
+        printf("Error when creating the color list.\n");
+        return;
+    }
+
+    list->colors[len - 1] = color;
+    list->length = len;
+}
+
+void ColorList_Remove(ColorList *list, int index)
+{
+    for (int i = index; i < list->length - 1; ++i)
+    {
+        list->colors[i] = list->colors[i + 1];
+    }   
+
+    int len = list->length - 1;
+    Color *temp = (Color *)realloc(list->colors, len * sizeof(Body));
+
+    if (temp == NULL)
+    {
+        printf("Error when reallocating the bodies.\n");
+        return;
+    }
+
+    list->colors = temp;
+    list->length = len; 
+}
+
+void ColorList_Destroy(ColorList *list)
+{
+    if (list->colors != NULL)
+    {
+        free(list->colors);
+    }
+}
 
 void Engine_Init(const char *title, int width, int height, Window *window)
 {
@@ -41,7 +90,7 @@ void Engine_Init(const char *title, int width, int height, Window *window)
     window->renderer = SDL_CreateRenderer(
                                         window->window, 
                                         -1, 
-                                        SDL_RENDERER_ACCELERATED);
+                                        SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
     if (window->renderer == NULL)
     {
@@ -57,36 +106,17 @@ void Engine_Init(const char *title, int width, int height, Window *window)
     SDL_memset(window->input.mousePressed, 0, 3);
     SDL_memset(window->input.mouseRealese, 0, 3);
 
-    World_CreateDefault(&world);
+    Vector2 gravity = {0.0f, 490.0f};
+    World_Create(&world, gravity);
+    ColorList_Create(&colorList);
 
-    for (int i = 0; i <= BODY_COUNT; ++i)
-    {
-        float posX = (rand() % 999) + 25;
-        float posY = (rand() % 551) + 25;
+    Body ground;
+    Vector2 groundPos = {512, 551};
 
-        ShapeType shape = (rand() % 2 == 0) ? Box : Circle;
-        colors[i] = Color_CreateRGB(rand() % 255, rand() % 255, rand() % 255);
-
-        bool s = (i > 0) ? (rand() % 2 == 0) : false; 
-        if (s) colors[i] = Color_CreateRGB(122, 96, 63);
-
-        if (shape == Box)
-        {
-            Body box;
-            Vector2 position = {posX, posY};
-            Body_NewBox(&box, position, 5.0f, 5.0f, 50.0f, 0.0f, 0.5f, s);
-            World_AddBody(world, &box);
-            Body_Destroy(&box);
-        }
-        else
-        {
-            Body circle;
-            Vector2 position = {posX, posY};
-            Body_NewCircle(&circle, position, 5.0f, 50.0f, 0.0f, 0.5f, s);
-            World_AddBody(world, &circle);
-        }
-    }
-
+    Body_NewBox(&ground, groundPos, 120.0f, 5.0f, 50.0f, 0.0f, 0.5f, true);
+    World_AddBody(world, &ground);
+    ColorList_Push(&colorList, Color_CreateRGB(160, 82, 45));
+ 
     window->frequency = SDL_GetPerformanceFrequency();
     window->lastTime = SDL_GetPerformanceCounter();
 }
@@ -98,28 +128,55 @@ void Engine_Update(Window *window)
     float elapsedTime = (float)elapsedTicks / window->frequency;
 
     window->lastTime = currentTime;
-    World_Step(world, window, elapsedTime);
+    World_Step(world, window, 20, elapsedTime);
 
-    Uint64 start = SDL_GetPerformanceCounter();
-    SDL_Delay(1);
-    Uint64 end = SDL_GetPerformanceCounter();
-
-    if (end > start) 
+    if (Input_MousePressed(&window->input, 0))
     {
-        window->totalTicks += (end - start);
-        window->trialCount++;
+        float posX = window->input.mouse_x;
+        float posY = window->input.mouse_y;
+
+        ShapeType shape = (rand() % 2 == 0) ? Box : Circle;
+
+        if (shape == Box)
+        {
+            Body box;
+            Vector2 position = {posX, posY}; 
+            Color color = Color_CreateRGB(rand() % 255, rand() % 255, rand() % 255);
+
+            int width = (rand() % 5) + 4;
+            int height = (rand() % 5) + 4;
+
+            Body_NewBox(&box, position, width, height, 50.0f, 0.0f, 0.5f, false);
+            World_AddBody(world, &box);
+            ColorList_Push(&colorList, color);
+            Body_Destroy(&box);
+        }
+        else
+        {
+            Body circle;
+            Vector2 position = {posX, posY}; 
+            Color color = Color_CreateRGB(rand() % 255, rand() % 255, rand() % 255);
+
+            int radius = (rand() % 5) + 2;
+
+            Body_NewCircle(&circle, position, radius, 50.0f, 0.0f, 0.5f, false);
+            World_AddBody(world, &circle);
+            ColorList_Push(&colorList, color);
+        }
     }
 
-    if (window->trialCount >= 100) 
+    for (int i = 0; i < world->bodies.length; ++i)
     {
-        double avgTicks = (double)window->totalTicks / 100;
-        window->avgMillis = (avgTicks * 1000) / window->frequency;
-            
-        window->totalTicks = 0;
-        window->trialCount = 0;
+        Body_GetAABB(&world->bodies.bodies[i]);
+
+        if (world->bodies.bodies[i].aabb[1][1] > world->bodies.bodies->aabb[1][1])
+        {
+            BodyList_Remove(&world->bodies, i);
+            ColorList_Remove(&colorList, i);
+        }
     }
 
-    SDL_Delay(window->avgMillis);
+    printf("Body Count: %i\n", world->bodies.length);
 }
 
 void Input_Begin(Input *input)
@@ -226,10 +283,10 @@ void Engine_Render(Window *window)
 {
     SDL_SetRenderDrawColor(window->renderer, 35, 35, 35, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(window->renderer);
-
-    for (int i = 0; i < world->length; ++i)
+    
+    for (int i = 0; i < world->bodies.length; ++i)
     {
-        Body_Debug(&world->bodies[i], window, colors[i]);
+        Body_Debug(&world->bodies.bodies[i], window, colorList.colors[i]);
     }
 
     SDL_RenderPresent(window->renderer);
@@ -238,6 +295,7 @@ void Engine_Render(Window *window)
 void Engine_CleanUp(Window *window)
 {
     World_Destroy(&world);
+    ColorList_Destroy(&colorList);
     SDL_DestroyRenderer(window->renderer);
     SDL_DestroyWindow(window->window);
     SDL_Quit();
